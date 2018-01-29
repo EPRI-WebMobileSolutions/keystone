@@ -10,14 +10,14 @@ var isReserved = require('../../../lib/list/isReserved');
  * @extends Field
  * @api public
  */
-function list (keystoneList, path, options) {
+function list(keystoneList, path, options) {
 	this._underscoreMethods = ['format'];
 	list.super_.call(this, keystoneList, path, options);
 }
 list.properName = 'List';
 util.inherits(list, FieldType);
 
-function validateFieldType (field, path, type) {
+function validateFieldType(field, path, type) {
 	var Field = field.list.keystone.Field;
 	if (!(type.prototype instanceof Field)) {
 		// Convert native field types to their default Keystone counterpart
@@ -31,8 +31,14 @@ function validateFieldType (field, path, type) {
 			type = Field.Types.Datetime;
 		} else {
 			throw new Error(
-				'Unrecognised field constructor for nested schema path `' + path
-				+ '` in `' + field.list.key + '.' + field.path + '`: ' + type
+				'Unrecognised field constructor for nested schema path `' +
+					path +
+					'` in `' +
+					field.list.key +
+					'.' +
+					field.path +
+					'`: ' +
+					type
 			);
 		}
 	}
@@ -44,23 +50,26 @@ function validateFieldType (field, path, type) {
  *
  * @api public
  */
-list.prototype.addToSchema = function (schema) {
+list.prototype.addToSchema = function(schema) {
 	var field = this;
 	var mongoose = this.list.keystone.mongoose;
 
-	var fields = this.fields = {};
-	var fieldsArray = this.fieldsArray = [];
+	var fields = (this.fields = {});
+	var fieldsArray = (this.fieldsArray = []);
 	var fieldsSpec = this.options.fields;
 	var itemSchema = new mongoose.Schema();
 
 	if (typeof fieldsSpec !== 'object' || !Object.keys(fieldsSpec).length) {
 		throw new Error(
-			'List field ' + field.list.key + '.' + field.path
-			+ ' must be configured with `fields`.'
+			'List field ' +
+				field.list.key +
+				'.' +
+				field.path +
+				' must be configured with `fields`.'
 		);
 	}
 
-	function createField (path, options) {
+	function createField(path, options) {
 		if (typeof options === 'function') {
 			options = { type: options };
 		}
@@ -69,9 +78,14 @@ list.prototype.addToSchema = function (schema) {
 		}
 		if (typeof options.type !== 'function') {
 			throw new Error(
-				'Invalid type for nested schema path `' + path + '` in `'
-				+ field.list.key + '.' + field.path + '`.\n'
-				+ 'Did you misspell the field type?\n'
+				'Invalid type for nested schema path `' +
+					path +
+					'` in `' +
+					field.list.key +
+					'.' +
+					field.path +
+					'`.\n' +
+					'Did you misspell the field type?\n'
 			);
 		}
 		options.type = validateFieldType(field, path, options.type);
@@ -87,18 +101,28 @@ list.prototype.addToSchema = function (schema) {
 		return new options.type(field.list, path, options);
 	}
 
-	Object.keys(fieldsSpec).forEach(function (path) {
+	Object.keys(fieldsSpec).forEach(function(path) {
 		if (!fieldsSpec[path]) {
 			throw new Error(
-				'Invalid value for nested schema path `' + path + '` in `'
-				+ field.list.key + '.' + field.path + '`.\n'
-				+ 'Did you misspell the field type?\n'
+				'Invalid value for nested schema path `' +
+					path +
+					'` in `' +
+					field.list.key +
+					'.' +
+					field.path +
+					'`.\n' +
+					'Did you misspell the field type?\n'
 			);
 		}
 		if (isReserved(path)) {
 			throw new Error(
-				'Nested schema path ' + path + ' on field '
-				+ field.list.key + '.' + field.path + ' is a reserved path'
+				'Nested schema path ' +
+					path +
+					' on field ' +
+					field.list.key +
+					'.' +
+					field.path +
+					' is a reserved path'
 			);
 		}
 		var newField = createField(path, fieldsSpec[path]);
@@ -117,20 +141,20 @@ list.prototype.addToSchema = function (schema) {
 /**
  * Provides additional properties for the Admin UI
  */
-list.prototype.getProperties = function (item, separator) {
+list.prototype.getProperties = function(item, separator) {
 	var fields = {};
-	this.fieldsArray.forEach(function (field) {
+	this.fieldsArray.forEach(function(field) {
 		fields[field.path] = field.getOptions();
 	});
 	return {
-		fields: fields,
+		fields: fields
 	};
 };
 
 /**
  * Formats the field value
  */
-list.prototype.format = function (item, separator) {
+list.prototype.format = function(item, separator) {
 	// TODO: How should we format nested items? Returning length for now.
 	var items = item.get(this.path) || [];
 	return utils.plural(items.length, '* Value', '* Values');
@@ -144,7 +168,7 @@ list.prototype.addFilterToQuery = function (filter) { };
 /**
  * Asynchronously confirms that the provided value is valid
  */
-list.prototype.validateInput = function (data, callback) {
+list.prototype.validateInput = function(data, callback) {
 	// TODO
 	// var value = this.getValueFromData(data);
 	var result = true;
@@ -154,17 +178,17 @@ list.prototype.validateInput = function (data, callback) {
 /**
  * Asynchronously confirms that the a value is present
  */
-list.prototype.validateRequiredInput = function (item, data, callback) {
+list.prototype.validateRequiredInput = function(item, data, callback) {
 	// TODO
 	// var value = this.getValueFromData(data);
 	var result = true;
 	utils.defer(callback, result);
 };
 
-list.prototype.getData = function (item) {
+list.prototype.getData = function(item) {
 	var items = item.get(this.path);
 	var fieldsArray = this.fieldsArray;
-	return items.map(function (i) {
+	return items.map(function(i) {
 		var result = { id: i.id };
 		for (var field of fieldsArray) {
 			result[field.path] = field.getData(i);
@@ -177,7 +201,7 @@ list.prototype.getData = function (item) {
  * Updates the value for this field in the item from a data object.
  * If the data object does not contain the value, then the value is set to empty array.
  */
-list.prototype.updateItem = function (item, data, files, callback) {
+list.prototype.updateItem = function(item, data, files, callback) {
 	if (typeof files === 'function') {
 		callback = files;
 		files = {};
@@ -187,7 +211,8 @@ list.prototype.updateItem = function (item, data, files, callback) {
 	var values = this.getValueFromData(data);
 	// Don't update the value when it is undefined
 	if (values === undefined) {
-		return utils.defer(callback);
+		// return utils.defer(callback);
+		values = [];
 	}
 	// Reset the value when null or an empty string is provided
 	if (values === null || values === '') {
@@ -202,23 +227,31 @@ list.prototype.updateItem = function (item, data, files, callback) {
 	// can make it more clever in a future release; this is otherwise the most
 	// resiliant update method that can be implemented without a lot of complexity
 	var listArray = item.get(this.path);
-	async.map(values, function (value, next) {
-		var prevItem = listArray.id(value.id);
-		var newItem = listArray.create(prevItem);
-		async.forEach(field.fieldsArray, function (nestedField, done) {
-			if (nestedField.updateItem.length === 4) {
-				nestedField.updateItem(newItem, value, files, done);
-			} else {
-				nestedField.updateItem(newItem, value, done);
-			}
-		}, function (err) {
-			next(err, newItem);
-		});
-	}, function (err, updatedValues) {
-		if (err) return callback(err);
-		item.set(field.path, updatedValues);
-		callback();
-	});
+	async.map(
+		values,
+		function(value, next) {
+			var prevItem = listArray.id(value.id);
+			var newItem = listArray.create(prevItem);
+			async.forEach(
+				field.fieldsArray,
+				function(nestedField, done) {
+					if (nestedField.updateItem.length === 4) {
+						nestedField.updateItem(newItem, value, files, done);
+					} else {
+						nestedField.updateItem(newItem, value, done);
+					}
+				},
+				function(err) {
+					next(err, newItem);
+				}
+			);
+		},
+		function(err, updatedValues) {
+			if (err) return callback(err);
+			item.set(field.path, updatedValues);
+			callback();
+		}
+	);
 };
 
 /* Export Field Type */
