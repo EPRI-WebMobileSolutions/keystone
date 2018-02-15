@@ -221,6 +221,15 @@ relationship.prototype.updateItem = function (item, data, callback) {
 		throw new Error('fieldTypes.relationship.updateItem() Error - You cannot update populated relationships.');
 	}
 
+	// fix for deleting the last item in the array
+	// Devon Bellizio 02/15/18
+	if (!data.hasOwnProperty(this.path)) {
+		if (this.many) {
+			item.set(this.path, []);
+		}
+		return process.nextTick(callback);
+	}
+
 	var value = this.getValueFromData(data);
 	if (value === undefined) {
 		return process.nextTick(callback);
